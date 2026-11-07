@@ -72,14 +72,15 @@ fi
 
 # Carregar variáveis do .env
 source .env
-APP_PORT=${APP_PORT:-3000}
+APP_PORT=${APP_PORT:-3080}
 
-echo -e "\n${YELLOW}[4/6] Configurando Firewall UFW para a porta ${APP_PORT}...${NC}"
+echo -e "\n${YELLOW}[4/6] Configurando Firewall UFW para as portas 80 e ${APP_PORT}...${NC}"
 ufw allow 22/tcp || true
+ufw allow 80/tcp || true
 ufw allow ${APP_PORT}/tcp || true
 # Habilitar ufw se não estiver ativo
 ufw --force enable || true
-echo -e "${GREEN}Porta ${APP_PORT} liberada com sucesso!${NC}"
+echo -e "${GREEN}Portas 80 e ${APP_PORT} liberadas com sucesso!${NC}"
 
 # Criar diretórios de backup
 mkdir -p backups
