@@ -7,6 +7,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (user: User, token?: string) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -40,6 +41,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(newUser);
   };
 
+  const updateUser = (newUser: User, newToken?: string) => {
+    localStorage.setItem('cobranca_user', JSON.stringify(newUser));
+    setUser(newUser);
+    if (newToken) {
+      localStorage.setItem('cobranca_token', newToken);
+      setToken(newToken);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('cobranca_token');
     localStorage.removeItem('cobranca_user');
@@ -54,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         login,
         logout,
+        updateUser,
         isAuthenticated: !!token,
         isLoading
       }}

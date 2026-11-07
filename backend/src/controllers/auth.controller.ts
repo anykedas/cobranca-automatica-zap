@@ -15,6 +15,11 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6, 'Nova senha deve ter pelo menos 6 caracteres')
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres').optional(),
+  email: z.string().email('E-mail em formato inválido')
+});
+
 export class AuthController {
   async login(req: Request, res: Response): Promise<void> {
     const { email, password } = loginSchema.parse(req.body);
@@ -95,6 +100,52 @@ export class AuthController {
     });
 
     res.json({ message: 'Senha alterada com sucesso.' });
+  }
+
+  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { name, email } = updateProfileSchema.parse(req.body);
+    const userId = req.user!.userId;
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existing = await prisma.user.findFirst({
+      where: {
+        email: normalizedEmail,
+        id: { not: userId }
+      }
+    });
+
+    if (existing) {
+      res.status(400).json({ error: 'Este e-mail já está em uso por outro usuário.' });
+      return;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: normalizedEmail,
+        ...(name ? { name: name.trim() } : {})
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true
+      }
+    });
+
+    const newToken = jwt.sign(
+      { userId: updatedUser.id, email: updatedUser.email, role: updatedUser.role },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Perfil e e-mail atualizados com sucesso.',
+      user: updatedUser,
+      token: newToken
+    });
   }
 }
 
