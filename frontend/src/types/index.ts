@@ -115,3 +115,87 @@ export interface BillingSettings {
   COMPANY_NAME: string;
   PAYMENT_LINK: string;
 }
+
+export type ExpenseStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+
+export interface SupplierExpense {
+  id: string;
+  name: string;
+  category: string;
+  description?: string | null;
+  amount: number;
+  dueDate: string;
+  paidAt?: string | null;
+  status: ExpenseStatus;
+  notes?: string | null;
+  whatsappId?: string | null;
+  recurrence?: RecurrenceType | null;
+  createdAt: string;
+  updatedAt: string;
+  whatsapp?: {
+    id: string;
+    name: string;
+    phone?: string | null;
+  };
+}
+
+export interface FinanceStats {
+  period: {
+    month: number;
+    year: number;
+    monthName: string;
+  };
+  whatsappId: string;
+  totalApprovedRevenue: number;
+  paymentsCount: number;
+  totalSupplierExpensesPaid: number;
+  paidExpensesCount: number;
+  netProfit: number;
+  profitMargin: number;
+  totalSupplierExpensesPending: number;
+  pendingExpensesCount: number;
+  projectedExpenses: number;
+  projectedProfit: number;
+  totalContractValue: number;
+  activeCustomersCount: number;
+  overdueAmount: number;
+  overdueCount: number;
+}
+
+export interface MonthlyReportItem {
+  month: number;
+  monthName: string;
+  fullMonthName: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+  margin: number;
+  paymentsCount: number;
+  expensesCount: number;
+}
+
+export interface MonthlyReport {
+  year: number;
+  whatsappId: string;
+  summary: {
+    totalYearRevenue: number;
+    totalYearExpenses: number;
+    totalYearProfit: number;
+    yearMargin: number;
+  };
+  months: MonthlyReportItem[];
+}
+
+export interface OverdueCustomer {
+  id: string;
+  name: string;
+  phone: string;
+  amount: number;
+  dueDate: string;
+  recurrence: RecurrenceType;
+  daysOverdue: number;
+  whatsappId: string;
+  whatsappName: string;
+  whatsappStatus?: string;
+}
+

@@ -41,6 +41,12 @@ enum BillingStage {
   MANUAL
 }
 
+enum ExpenseStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -66,6 +72,7 @@ model WhatsAppInstance {
 
   customers        Customer[]
   messages         MessageHistory[]
+  supplierExpenses SupplierExpense[]
 
   @@map("whatsapp_instances")
 }
@@ -155,4 +162,27 @@ model Setting {
   updatedAt   DateTime @updatedAt
 
   @@map("settings")
+}
+
+model SupplierExpense {
+  id          String          @id @default(uuid())
+  name        String
+  category    String          @default("Fornecedores")
+  description String?         @db.Text
+  amount      Decimal         @db.Decimal(10, 2)
+  dueDate     DateTime
+  paidAt      DateTime?
+  status      ExpenseStatus   @default(PENDING)
+  notes       String?         @db.Text
+  whatsappId  String?
+  recurrence  RecurrenceType?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  whatsapp    WhatsAppInstance? @relation(fields: [whatsappId], references: [id], onDelete: Cascade)
+
+  @@index([whatsappId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("supplier_expenses")
 }

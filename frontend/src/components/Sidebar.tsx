@@ -9,7 +9,8 @@ import {
   Database, 
   LogOut,
   X,
-  CreditCard
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.js';
 
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'clientes', label: 'Clientes', icon: Users },
     { id: 'whatsapp', label: 'Números WhatsApp', icon: Smartphone },
     { id: 'cobrancas', label: 'Cobranças', icon: CreditCard },
+    { id: 'financeiro', label: 'Financeiro & Lucro', icon: DollarSign },
     { id: 'historico', label: 'Histórico de Envios', icon: History },
     { id: 'configuracoes', label: 'Configurações', icon: Settings },
     { id: 'backup', label: 'Backup & Sistema', icon: Database },

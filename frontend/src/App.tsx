@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard.js';
 import { Customers } from './pages/Customers.js';
 import { WhatsAppNumbers } from './pages/WhatsAppNumbers.js';
 import { BillingRules } from './pages/BillingRules.js';
+import { Financial } from './pages/Financial.js';
 import { MessageHistory } from './pages/MessageHistory.js';
 import { SettingsPage } from './pages/Settings.js';
 import { BackupPage } from './pages/Backup.js';
@@ -89,6 +90,7 @@ export function App() {
     clientes: { title: 'Gestão de Clientes', subtitle: 'Cadastro, controle de mensalidades e avanço de ciclos' },
     whatsapp: { title: 'Números WhatsApp', subtitle: 'Instâncias conectadas, geração de QR Code e sessões' },
     cobrancas: { title: 'Cobranças & Régua', subtitle: 'Prazos de disparo, janela de horário e mensagens automáticas' },
+    financeiro: { title: 'Módulo Financeiro & Lucro', subtitle: 'Receitas aprovadas, custos de fornecedores, DRE e inadimplência' },
     historico: { title: 'Histórico de Envios', subtitle: 'Auditoria de mensagens enviadas, entregues e falhas' },
     configuracoes: { title: 'Configurações', subtitle: 'Segurança da conta e diagnóstico do sistema' },
     backup: { title: 'Backup & Manutenção', subtitle: 'Rotinas de segurança e comandos de infraestrutura VPS' }
@@ -128,6 +130,7 @@ export function App() {
           {currentTab === 'clientes' && <Customers />}
           {currentTab === 'whatsapp' && <WhatsAppNumbers />}
           {currentTab === 'cobrancas' && <BillingRules />}
+          {currentTab === 'financeiro' && <Financial />}
           {currentTab === 'historico' && <MessageHistory />}
           {currentTab === 'configuracoes' && <SettingsPage />}
           {currentTab === 'backup' && <BackupPage />}
