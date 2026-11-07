@@ -17,6 +17,8 @@ router.get('/:id', authMiddleware, (req, res, next) => whatsAppController.getByI
 router.get('/:id/qrcode', authMiddleware, (req, res, next) => whatsAppController.getQRCode(req, res).catch(next));
 router.post('/:id/reconnect', authMiddleware, (req, res, next) => whatsAppController.reconnect(req, res).catch(next));
 router.post('/:id/disconnect', authMiddleware, (req, res, next) => whatsAppController.disconnect(req, res).catch(next));
+router.post('/:id/set-default-api', authMiddleware, (req, res, next) => whatsAppController.setDefaultApi(req, res).catch(next));
+router.post('/default-api', authMiddleware, (req, res, next) => whatsAppController.setDefaultApi(req, res).catch(next));
 router.delete('/:id', authMiddleware, (req, res, next) => whatsAppController.delete(req, res).catch(next));
 
 export default router;

@@ -19,6 +19,7 @@ export interface WhatsAppInstance {
   phone?: string | null;
   qrcode?: string | null;
   lastConnectionAt?: string | null;
+  isDefaultApi?: boolean;
   createdAt: string;
   updatedAt: string;
   _count?: {

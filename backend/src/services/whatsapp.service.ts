@@ -22,6 +22,10 @@ export class WhatsAppService {
    * Lista todas as instâncias cadastradas e sincroniza o status em tempo real com a Evolution API
    */
   async listInstances() {
+    const defaultSetting = await prisma.setting.findUnique({
+      where: { key: 'DEFAULT_API_WHATSAPP_ID' }
+    });
+
     const instances = await prisma.whatsAppInstance.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
@@ -65,7 +69,10 @@ export class WhatsAppService {
       })
     );
 
-    return updatedInstances;
+    return updatedInstances.map((inst: any) => ({
+      ...inst,
+      isDefaultApi: inst.id === defaultSetting?.value
+    }));
   }
 
   /**
@@ -346,13 +353,26 @@ export class WhatsAppService {
         throw new Error(`Instância WhatsApp "${requestedInstance}" não foi encontrada no sistema.`);
       }
     } else {
-      // Se não especificou, busca a primeira conectada
-      instance = await prisma.whatsAppInstance.findFirst({
-        where: { status: 'CONNECTED' },
-        orderBy: { updatedAt: 'desc' }
+      // 1.1 Verificar se há uma instância configurada no painel como ativa/padrão para a API
+      const defaultSetting = await prisma.setting.findUnique({
+        where: { key: 'DEFAULT_API_WHATSAPP_ID' }
       });
 
-      // Se nenhuma estiver com flag CONNECTED, pega qualquer uma cadastrada
+      if (defaultSetting?.value) {
+        instance = await prisma.whatsAppInstance.findUnique({
+          where: { id: defaultSetting.value }
+        });
+      }
+
+      // 1.2 Se não houver padrão configurado ou não encontrada, busca a primeira conectada
+      if (!instance) {
+        instance = await prisma.whatsAppInstance.findFirst({
+          where: { status: 'CONNECTED' },
+          orderBy: { updatedAt: 'desc' }
+        });
+      }
+
+      // 1.3 Se nenhuma estiver com flag CONNECTED, pega qualquer uma cadastrada
       if (!instance) {
         instance = await prisma.whatsAppInstance.findFirst({
           orderBy: { createdAt: 'asc' }
@@ -406,6 +426,37 @@ export class WhatsAppService {
         phone: instance.phone
       },
       sentAt: history.sentAt
+    };
+  }
+
+  /**
+   * Define qual instância de WhatsApp é a padrão para envio via API (/send-message)
+   */
+  async setDefaultApiInstance(instanceId: string) {
+    const instance = await prisma.whatsAppInstance.findUnique({
+      where: { id: instanceId }
+    });
+
+    if (!instance) {
+      throw new Error('Instância de WhatsApp não encontrada.');
+    }
+
+    await prisma.setting.upsert({
+      where: { key: 'DEFAULT_API_WHATSAPP_ID' },
+      update: { value: instanceId },
+      create: {
+        key: 'DEFAULT_API_WHATSAPP_ID',
+        value: instanceId,
+        description: 'ID da instância de WhatsApp padrão para disparos via API externa (/send-message)'
+      }
+    });
+
+    return {
+      message: `Número "${instance.name}" ativado com sucesso como padrão para a API externa!`,
+      instance: {
+        ...instance,
+        isDefaultApi: true
+      }
     };
   }
 }

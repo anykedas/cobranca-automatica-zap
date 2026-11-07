@@ -103,6 +103,24 @@ export class WhatsAppController {
       });
     }
   }
+
+  /**
+   * Define qual instância é a ativa/padrão para disparos via API (/send-message)
+   */
+  async setDefaultApi(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const instanceId = id || req.body.instanceId;
+      if (!instanceId) {
+        res.status(400).json({ error: 'ID da instância é obrigatório.' });
+        return;
+      }
+      const result = await whatsAppService.setDefaultApiInstance(instanceId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Erro ao definir instância padrão para a API.' });
+    }
+  }
 }
 
 export const whatsAppController = new WhatsAppController();
