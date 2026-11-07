@@ -5,7 +5,13 @@ import { whatsAppService } from '../services/whatsapp.service.js';
 import { config } from '../config/index.js';
 
 const createWhatsAppSchema = z.object({
-  name: z.string().min(2, 'O nome da conexão deve ter pelo menos 2 caracteres')
+  name: z.string().min(2, 'O nome da conexão deve ter pelo menos 2 caracteres'),
+  phone: z.string().optional()
+});
+
+const updateWhatsAppSchema = z.object({
+  name: z.string().min(2, 'O nome da conexão deve ter pelo menos 2 caracteres').optional(),
+  phone: z.string().optional()
 });
 
 export class WhatsAppController {
@@ -21,9 +27,16 @@ export class WhatsAppController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
-    const { name } = createWhatsAppSchema.parse(req.body);
-    const instance = await whatsAppService.createInstance(name);
+    const { name, phone } = createWhatsAppSchema.parse(req.body);
+    const instance = await whatsAppService.createInstance(name, phone);
     res.status(201).json({ instance });
+  }
+
+  async update(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { name, phone } = updateWhatsAppSchema.parse(req.body);
+    const instance = await whatsAppService.updateInstance(id, { name, phone });
+    res.json({ message: 'Instância atualizada com sucesso.', instance });
   }
 
   async getQRCode(req: Request, res: Response): Promise<void> {

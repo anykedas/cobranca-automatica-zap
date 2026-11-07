@@ -91,7 +91,8 @@ export class CustomerService {
             select: {
               id: true,
               name: true,
-              status: true
+              status: true,
+              phone: true
             }
           },
           payments: {

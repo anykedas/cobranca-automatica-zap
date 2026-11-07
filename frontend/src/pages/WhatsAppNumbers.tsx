@@ -14,7 +14,8 @@ import {
   HardDrive,
   Zap,
   Copy,
-  Check
+  Check,
+  Edit2
 } from 'lucide-react';
 import { Modal } from '../components/Modal.js';
 import { WhatsAppInstance } from '../types/index.js';
@@ -25,8 +26,16 @@ export const WhatsAppNumbers: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [newInstanceName, setNewInstanceName] = useState('');
+  const [newInstancePhone, setNewInstancePhone] = useState('');
   const [copiedEndpoint, setCopiedEndpoint] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState(false);
+
+  // Estados de Edição da Instância
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingInstance, setEditingInstance] = useState<WhatsAppInstance | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const defaultInstance = instances.find(i => i.isDefaultApi);
   const defaultInstanceId = defaultInstance?.id;
@@ -89,8 +98,12 @@ export const WhatsAppNumbers: React.FC = () => {
 
     try {
       setIsCreating(true);
-      const res = await api.post('/whatsapp', { name: newInstanceName.trim() });
+      const res = await api.post('/whatsapp', { 
+        name: newInstanceName.trim(),
+        phone: newInstancePhone.trim() || undefined
+      });
       setNewInstanceName('');
+      setNewInstancePhone('');
       await fetchInstances();
       // Abre imediatamente o modal de QR code da nova instância criada
       handleOpenQRCode(res.data.instance);
@@ -98,6 +111,33 @@ export const WhatsAppNumbers: React.FC = () => {
       alert(error.response?.data?.error || 'Erro ao cadastrar número de WhatsApp.');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleOpenEdit = (inst: WhatsAppInstance) => {
+    setEditingInstance(inst);
+    setEditName(inst.name);
+    setEditPhone(inst.phone || '');
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateInstance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInstance || !editName.trim()) return;
+
+    try {
+      setIsUpdating(true);
+      await api.put(`/whatsapp/${editingInstance.id}`, {
+        name: editName.trim(),
+        phone: editPhone.trim() || undefined
+      });
+      setEditModalOpen(false);
+      setEditingInstance(null);
+      await fetchInstances();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Erro ao atualizar dados do WhatsApp.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -262,28 +302,43 @@ export const WhatsAppNumbers: React.FC = () => {
 
       {/* Barra de Ações: Adicionar Número */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
-        <h3 className="text-base font-bold text-slate-800 mb-3">Adicionar Novo Número WhatsApp</h3>
-        <form onSubmit={handleCreateInstance} className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full flex-1">
+        <div className="mb-3">
+          <h3 className="text-base font-bold text-slate-800">Adicionar Novo Número WhatsApp</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Informe o nome do responsável ou setor e o número de WhatsApp para identificação.</p>
+        </div>
+        <form onSubmit={handleCreateInstance} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+          <div className="relative sm:col-span-6">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Smartphone className="w-4 h-4" />
+              <Users className="w-4 h-4" />
             </div>
             <input
               type="text"
               required
-              placeholder="Ex: WhatsApp Cobrança 01, Financeiro Matriz..."
+              placeholder="Nome / Dono do WhatsApp (Ex: Carlos Cobrança, Financeiro...)"
               value={newInstanceName}
               onChange={(e) => setNewInstanceName(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-800"
             />
           </div>
+          <div className="relative sm:col-span-4">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <Smartphone className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              placeholder="Número com DDD (Ex: 5511999999999)"
+              value={newInstancePhone}
+              onChange={(e) => setNewInstancePhone(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-800 font-mono"
+            />
+          </div>
           <button
             type="submit"
             disabled={isCreating}
-            className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-sm font-semibold rounded-xl shadow-xs flex items-center justify-center gap-2 shrink-0 transition-all disabled:opacity-60"
+            className="sm:col-span-2 w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 shrink-0 transition-all disabled:opacity-60"
           >
             <Plus className="w-4 h-4" />
-            <span>{isCreating ? 'Cadastrando...' : 'Cadastrar e Conectar'}</span>
+            <span>{isCreating ? 'Salvando...' : 'Cadastrar'}</span>
           </button>
         </form>
       </div>
@@ -323,15 +378,42 @@ export const WhatsAppNumbers: React.FC = () => {
                   }`}
                 >
                   <div>
-                    {/* Header do Card */}
+                    {/* Header do Card com Nome do Dono e Telefone */}
                     <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <h4 className="font-bold text-base text-slate-800 tracking-tight">{inst.name}</h4>
-                        <span className="text-[11px] font-mono text-slate-400">ID: {inst.instanceName}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-bold text-base text-slate-800 tracking-tight truncate" title={inst.name}>
+                            {inst.name}
+                          </h4>
+                          <button
+                            onClick={() => handleOpenEdit(inst)}
+                            title="Editar Nome do Dono e Número"
+                            className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {inst.phone ? (
+                          <div className="flex items-center gap-1 text-xs font-mono font-semibold text-slate-600 mt-0.5">
+                            <Smartphone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{inst.phone}</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenEdit(inst)}
+                            className="text-[11px] text-amber-600 hover:text-amber-800 underline block mt-0.5"
+                          >
+                            + Informar número de telefone
+                          </button>
+                        )}
+                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5 truncate">
+                          ID: {inst.instanceName}
+                        </span>
                       </div>
 
                       {/* Badges de Status e API */}
-                      <div className="flex flex-col items-end gap-1.5">
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
                           isConnected
                             ? 'bg-emerald-100 text-emerald-800'
@@ -424,6 +506,14 @@ export const WhatsAppNumbers: React.FC = () => {
                       )}
 
                       <button
+                        onClick={() => handleOpenEdit(inst)}
+                        title="Editar Nome do Dono e Telefone"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+
+                      <button
                         onClick={() => handleReconnect(inst.id)}
                         title="Reiniciar conexão"
                         className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
@@ -499,11 +589,72 @@ export const WhatsAppNumbers: React.FC = () => {
 
           <button
             onClick={handleCloseQrModal}
-            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
           >
             Fechar Janela
           </button>
         </div>
+      </Modal>
+
+      {/* Modal de Edição de Nome / Dono do WhatsApp */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title="Editar Identificação do WhatsApp"
+        maxWidth="md"
+      >
+        <form onSubmit={handleUpdateInstance} className="space-y-4">
+          <div className="p-3 bg-emerald-50 border border-emerald-200/60 rounded-xl text-xs text-emerald-900">
+            <p className="font-semibold">Defina o nome do dono ou setor responsável por este WhatsApp.</p>
+            <p className="text-[11px] text-emerald-700 mt-0.5">
+              Este nome aparecerá para você selecionar na hora de cadastrar clientes e nos filtros de envio.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Nome / Dono do WhatsApp *
+            </label>
+            <input
+              type="text"
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Ex: Carlos (Comercial), Financeiro Matriz..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Número de Telefone com DDD
+            </label>
+            <input
+              type="text"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              placeholder="Ex: 5511975165281"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-slate-800"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setEditModalOpen(false)}
+              className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-200 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-xs disabled:opacity-60 cursor-pointer"
+            >
+              {isUpdating ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

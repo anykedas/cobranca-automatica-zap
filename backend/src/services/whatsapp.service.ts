@@ -125,7 +125,7 @@ export class WhatsAppService {
   /**
    * Cria uma nova instância de WhatsApp
    */
-  async createInstance(name: string) {
+  async createInstance(name: string, phone?: string) {
     // Gerar um nome de instância limpo e único para a API
     const sanitizedName = name
       .toLowerCase()
@@ -135,7 +135,7 @@ export class WhatsAppService {
       .slice(0, 20);
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const instanceName = `zap_${sanitizedName}_${randomSuffix}`;
+    const instanceName = `zap_${sanitizedName || 'instance'}_${randomSuffix}`;
 
     // 1. Criar na Evolution API
     await evolutionService.createInstance(instanceName);
@@ -143,7 +143,8 @@ export class WhatsAppService {
     // 2. Salvar no Banco de Dados
     const newInstance = await prisma.whatsAppInstance.create({
       data: {
-        name,
+        name: name.trim(),
+        phone: phone ? phone.trim() : null,
         instanceName,
         status: 'CONNECTING'
       }
@@ -169,6 +170,24 @@ export class WhatsAppService {
       ...newInstance,
       qrcode: qrcodeBase64
     };
+  }
+
+  /**
+   * Atualiza os dados de identificação da instância (Nome/Responsável e Telefone)
+   */
+  async updateInstance(id: string, data: { name?: string; phone?: string }) {
+    const instance = await prisma.whatsAppInstance.findUnique({ where: { id } });
+    if (!instance) {
+      throw new Error('Instância de WhatsApp não encontrada.');
+    }
+
+    return await prisma.whatsAppInstance.update({
+      where: { id },
+      data: {
+        ...(data.name?.trim() ? { name: data.name.trim() } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone.trim() || null } : {})
+      }
+    });
   }
 
   /**

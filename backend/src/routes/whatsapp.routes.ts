@@ -13,6 +13,7 @@ router.post('/send-message', (req, res, next) => whatsAppController.sendMessage(
 // Rotas protegidas por autenticação administrativa
 router.get('/', authMiddleware, (req, res, next) => whatsAppController.list(req, res).catch(next));
 router.post('/', authMiddleware, (req, res, next) => whatsAppController.create(req, res).catch(next));
+router.put('/:id', authMiddleware, (req, res, next) => whatsAppController.update(req, res).catch(next));
 router.get('/:id', authMiddleware, (req, res, next) => whatsAppController.getById(req, res).catch(next));
 router.get('/:id/qrcode', authMiddleware, (req, res, next) => whatsAppController.getQRCode(req, res).catch(next));
 router.post('/:id/reconnect', authMiddleware, (req, res, next) => whatsAppController.reconnect(req, res).catch(next));

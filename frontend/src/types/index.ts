@@ -45,6 +45,7 @@ export interface Customer {
     id: string;
     name: string;
     status: InstanceStatus;
+    phone?: string | null;
   };
   payments?: Payment[];
   messages?: MessageHistory[];

@@ -365,12 +365,17 @@ export const Customers: React.FC<CustomersProps> = () => {
             <select
               value={whatsappFilter}
               onChange={(e) => { setWhatsappFilter(e.target.value); setPage(1); }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-[170px] truncate"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-[220px] truncate"
             >
               <option value="ALL">WhatsApp: Todos</option>
-              {whatsapps.map((w) => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
+              {whatsapps.map((w) => {
+                const phoneDisplay = w.phone && w.phone !== w.name ? ` (${w.phone})` : '';
+                return (
+                  <option key={w.id} value={w.id}>
+                    👤 {w.name}{phoneDisplay}
+                  </option>
+                );
+              })}
             </select>
 
             {/* Botão Novo Cliente */}
@@ -426,9 +431,12 @@ export const Customers: React.FC<CustomersProps> = () => {
                     {/* Telefone & WhatsApp Responsável */}
                     <td className="px-5 py-3.5">
                       <div className="font-medium text-slate-800">{cust.phone}</div>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Smartphone className="w-3 h-3 text-slate-400" />
-                        <span>{cust.whatsapp?.name || 'Não atribuído'}</span>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5" title="WhatsApp Responsável">
+                        <Smartphone className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="font-semibold text-slate-700">{cust.whatsapp?.name || 'Não atribuído'}</span>
+                        {cust.whatsapp?.phone && cust.whatsapp.phone !== cust.whatsapp.name && (
+                          <span className="text-[10px] text-slate-400 font-mono">({cust.whatsapp.phone})</span>
+                        )}
                       </div>
                     </td>
 
@@ -619,14 +627,20 @@ export const Customers: React.FC<CustomersProps> = () => {
                 required
                 value={formData.whatsappId}
                 onChange={(e) => setFormData({ ...formData, whatsappId: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
               >
                 {whatsapps.length === 0 ? (
                   <option value="">Nenhum número cadastrado ainda</option>
                 ) : (
-                  whatsapps.map((w) => (
-                    <option key={w.id} value={w.id}>{w.name} ({w.status === 'CONNECTED' ? 'Conectado' : 'Offline'})</option>
-                  ))
+                  whatsapps.map((w) => {
+                    const isConnected = w.status === 'CONNECTED';
+                    const phoneDisplay = w.phone && w.phone !== w.name ? ` (${w.phone})` : '';
+                    return (
+                      <option key={w.id} value={w.id}>
+                        👤 {w.name}{phoneDisplay} - {isConnected ? 'Conectado' : 'Offline'}
+                      </option>
+                    );
+                  })
                 )}
               </select>
             </div>

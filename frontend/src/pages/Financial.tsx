@@ -256,7 +256,7 @@ export const Financial: React.FC = () => {
                 <option value="all">🏢 Todos os Números WhatsApp (Consolidado)</option>
                 {whatsapps.map((w) => (
                   <option key={w.id} value={w.id}>
-                    📱 {w.name} {w.phone ? `(${w.phone})` : ''}
+                    📱 {w.name}{w.phone && w.phone !== w.name ? ` (${w.phone})` : ''}
                   </option>
                 ))}
               </select>
@@ -887,7 +887,7 @@ export const Financial: React.FC = () => {
                 <option value="all">🏢 Geral (Compartilhado entre todas as instâncias)</option>
                 {whatsapps.map((w) => (
                   <option key={w.id} value={w.id}>
-                    📱 {w.name} {w.phone ? `(${w.phone})` : ''}
+                    📱 {w.name}{w.phone && w.phone !== w.name ? ` (${w.phone})` : ''}
                   </option>
                 ))}
               </select>
