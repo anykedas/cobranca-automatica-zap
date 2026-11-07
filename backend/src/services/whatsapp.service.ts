@@ -300,6 +300,114 @@ export class WhatsAppService {
       console.error('[Webhook Evolution] Erro ao processar webhook:', error);
     }
   }
+
+  /**
+   * Envia uma mensagem avulsa externamente (via API ou webhook público)
+   */
+  async sendExternalMessage(data: {
+    number?: string;
+    phone?: string;
+    message?: string;
+    text?: string;
+    instance?: string;
+    instanceName?: string;
+    whatsappId?: string;
+  }) {
+    const targetPhone = data.number || data.phone;
+    const targetText = data.message || data.text;
+
+    if (!targetPhone) {
+      throw new Error('O campo "number" ou "phone" com o número de destino é obrigatório.');
+    }
+    if (!targetText) {
+      throw new Error('O campo "message" ou "text" com a mensagem a ser enviada é obrigatório.');
+    }
+
+    const cleanPhone = String(targetPhone).replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      throw new Error('Número de telefone inválido. Informe com DDI e DDD (ex: 5591999999999).');
+    }
+
+    // 1. Encontrar a instância desejada ou a primeira conectada
+    let instance: any = null;
+    const requestedInstance = data.instance || data.instanceName || data.whatsappId;
+
+    if (requestedInstance) {
+      instance = await prisma.whatsAppInstance.findFirst({
+        where: {
+          OR: [
+            { id: requestedInstance },
+            { instanceName: requestedInstance },
+            { name: requestedInstance }
+          ]
+        }
+      });
+      if (!instance) {
+        throw new Error(`Instância WhatsApp "${requestedInstance}" não foi encontrada no sistema.`);
+      }
+    } else {
+      // Se não especificou, busca a primeira conectada
+      instance = await prisma.whatsAppInstance.findFirst({
+        where: { status: 'CONNECTED' },
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      // Se nenhuma estiver com flag CONNECTED, pega qualquer uma cadastrada
+      if (!instance) {
+        instance = await prisma.whatsAppInstance.findFirst({
+          orderBy: { createdAt: 'asc' }
+        });
+      }
+    }
+
+    if (!instance) {
+      throw new Error('Nenhum número de WhatsApp cadastrado no sistema. Cadastre e conecte um número no painel primeiro.');
+    }
+
+    // 2. Disparar via Evolution API
+    try {
+      await evolutionService.sendTextMessage(instance.instanceName, cleanPhone, targetText);
+    } catch (err: any) {
+      // Registrar falha no histórico
+      await prisma.messageHistory.create({
+        data: {
+          phone: cleanPhone,
+          message: targetText,
+          stage: 'MANUAL',
+          status: 'FAILED',
+          failureReason: err.message,
+          whatsappId: instance.id
+        }
+      });
+      throw err;
+    }
+
+    // 3. Gravar sucesso no histórico
+    const history = await prisma.messageHistory.create({
+      data: {
+        phone: cleanPhone,
+        message: targetText,
+        stage: 'MANUAL',
+        status: 'SENT',
+        sentAt: new Date(),
+        whatsappId: instance.id
+      }
+    });
+
+    return {
+      status: 'sucesso',
+      message: 'Mensagem enviada com sucesso pelo WhatsApp!',
+      messageId: history.id,
+      destinatario: cleanPhone,
+      instanciaUtilizada: {
+        id: instance.id,
+        name: instance.name,
+        instanceName: instance.instanceName,
+        phone: instance.phone
+      },
+      sentAt: history.sentAt
+    };
+  }
 }
 
 export const whatsAppService = new WhatsAppService();

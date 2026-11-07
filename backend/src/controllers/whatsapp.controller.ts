@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import { whatsAppService } from '../services/whatsapp.service.js';
+import { config } from '../config/index.js';
 
 const createWhatsAppSchema = z.object({
   name: z.string().min(2, 'O nome da conexão deve ter pelo menos 2 caracteres')
@@ -51,6 +53,55 @@ export class WhatsAppController {
   async webhook(req: Request, res: Response): Promise<void> {
     await whatsAppService.handleWebhook(req.body);
     res.status(200).json({ status: 'received' });
+  }
+
+  /**
+   * Endpoint direto para disparo de mensagem avulsa via API externa (POST /send-message)
+   */
+  async sendMessage(req: Request, res: Response): Promise<void> {
+    try {
+      // Autenticação simplificada:
+      // Pode ser API Key (header 'apikey', 'x-api-key', ou query '?apikey=...'), Bearer JWT, ou chamadas internas (localhost)
+      const apiKey = (req.headers['apikey'] || req.headers['x-api-key'] || req.query.apikey || req.query.api_key) as string | undefined;
+      const authHeader = req.headers.authorization;
+      const clientIp = req.ip || req.socket.remoteAddress || '';
+      const isInternal = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp.includes('172.20.');
+
+      let isAuthorized = isInternal;
+
+      if (!isAuthorized && apiKey) {
+        if (apiKey === config.evolutionApiKey || apiKey === config.jwtSecret) {
+          isAuthorized = true;
+        }
+      }
+
+      if (!isAuthorized && authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          jwt.verify(token, config.jwtSecret);
+          isAuthorized = true;
+        } catch {
+          // token inválido
+        }
+      }
+
+      if (!isAuthorized) {
+        res.status(401).json({
+          status: 'erro',
+          error: 'Acesso não autorizado. Envie a chave no cabeçalho "apikey: SUA_CHAVE" ou via parâmetro na URL "?apikey=SUA_CHAVE".'
+        });
+        return;
+      }
+
+      const body = req.body || {};
+      const result = await whatsAppService.sendExternalMessage(body);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({
+        status: 'erro',
+        error: error.message || 'Erro ao enviar mensagem pelo WhatsApp.'
+      });
+    }
   }
 }
 

@@ -45,6 +45,14 @@ app.get(['/health', '/api/health'], (_req, res) => {
 // Rotas da API
 app.use('/api', routes);
 
+// Rota direta de conveniência POST /send-message (sem prefixo /api)
+app.post('/send-message', (req, res, next) => {
+  // Redireciona para o handler do whatsAppController
+  import('./controllers/whatsapp.controller.js')
+    .then(m => m.whatsAppController.sendMessage(req, res))
+    .catch(next);
+});
+
 // Middleware Global de Tratamento de Erros
 app.use(errorHandler);
 

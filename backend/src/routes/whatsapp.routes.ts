@@ -7,6 +7,9 @@ const router = Router();
 // Webhook da Evolution API (público / protegido por IP ou token se configurado na Evolution)
 router.post('/webhook', (req, res, next) => whatsAppController.webhook(req, res).catch(next));
 
+// Disparo de mensagem externa via API (POST /api/whatsapp/send-message)
+router.post('/send-message', (req, res, next) => whatsAppController.sendMessage(req, res).catch(next));
+
 // Rotas protegidas por autenticação administrativa
 router.get('/', authMiddleware, (req, res, next) => whatsAppController.list(req, res).catch(next));
 router.post('/', authMiddleware, (req, res, next) => whatsAppController.create(req, res).catch(next));
