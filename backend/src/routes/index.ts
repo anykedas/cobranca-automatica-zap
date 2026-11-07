@@ -1,0 +1,22 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes.js';
+import whatsappRoutes from './whatsapp.routes.js';
+import customerRoutes from './customer.routes.js';
+import billingRoutes from './billing.routes.js';
+import paymentRoutes from './payment.routes.js';
+import historyRoutes from './history.routes.js';
+import statsRoutes from './stats.routes.js';
+import settingsRoutes from './settings.routes.js';
+
+const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/whatsapp', whatsappRoutes);
+router.use('/customers', customerRoutes);
+router.use('/billing', billingRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/history', historyRoutes);
+router.use('/stats', statsRoutes);
+router.use('/settings', settingsRoutes);
+
+export default router;

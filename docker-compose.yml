@@ -1,0 +1,138 @@
+services:
+  # ==========================================
+  # Banco de Dados Relacional - PostgreSQL
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: cobranca_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-cobranca_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-senha_super_forte_postgres_2026}
+      POSTGRES_DB: ${DB_NAME:-cobrancadb}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cobranca_user} -d ${DB_NAME:-cobrancadb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cobranca_net
+
+  # ==========================================
+  # Fila e Cache - Redis
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: cobranca_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    networks:
+      - cobranca_net
+
+  # ==========================================
+  # Engine de WhatsApp Open-Source - Evolution API v2
+  # ==========================================
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    container_name: cobranca_evolution
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      SERVER_TYPE: http
+      SERVER_URL: http://evolution-api:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-evol_key_global_cobranca_segura_2026_whatsapp}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: "postgresql://${DB_USER:-cobranca_user}:${DB_PASSWORD:-senha_super_forte_postgres_2026}@postgres:5432/${DB_NAME:-cobrancadb}?schema=evolution"
+      DATABASE_CLIENT_NAME: "evolution"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      DATABASE_SAVE_MESSAGE_UPDATE: "false"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://redis:6379"
+      CACHE_REDIS_PREFIX_KEY: "evolution"
+      CONFIG_SESSION_PHONE_CLIENT: "CobrancaBot"
+      WEBHOOK_GLOBAL_ENABLED: "true"
+      WEBHOOK_GLOBAL_URL: "http://backend:4000/api/whatsapp/webhook"
+      WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS: "false"
+      WEBHOOK_EVENTS_CONNECTION_UPDATE: "true"
+      WEBHOOK_EVENTS_MESSAGES_UPSERT: "false"
+      WEBHOOK_EVENTS_SEND_MESSAGE: "true"
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - cobranca_net
+
+  # ==========================================
+  # API Backend - Node.js + TypeScript
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cobranca_backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://${DB_USER:-cobranca_user}:${DB_PASSWORD:-senha_super_forte_postgres_2026}@postgres:5432/${DB_NAME:-cobrancadb}?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-super_secreto_chave_jwt_cobranca_whatsapp_2026_mude_em_producao}
+      EVOLUTION_API_URL: "http://evolution-api:8080"
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-evol_key_global_cobranca_segura_2026_whatsapp}
+      REDIS_URL: "redis://redis:6379"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@cobranca.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Seguro2026!}
+      TZ: ${TZ:-America/Sao_Paulo}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      evolution-api:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - cobranca_net
+
+  # ==========================================
+  # Painel Web Frontend - React + Nginx Proxy
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: cobranca_frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - cobranca_net
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  evolution_instances:
+    driver: local
+
+networks:
+  cobranca_net:
+    driver: bridge

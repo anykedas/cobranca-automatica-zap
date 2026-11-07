@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RecurrenceType {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InstanceStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  ERROR
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum BillingStage {
+  BEFORE_DUE
+  ON_DUE
+  AFTER_DUE
+  MANUAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model WhatsAppInstance {
+  id               String         @id @default(uuid())
+  name             String
+  instanceName     String         @unique
+  status           InstanceStatus @default(DISCONNECTED)
+  phone            String?
+  qrcode           String?        @db.Text
+  lastConnectionAt DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  customers        Customer[]
+  messages         MessageHistory[]
+
+  @@map("whatsapp_instances")
+}
+
+model Customer {
+  id            String         @id @default(uuid())
+  name          String
+  phone         String
+  dueDate       DateTime
+  recurrence    RecurrenceType @default(MENSAL)
+  amount        Decimal?       @db.Decimal(10, 2)
+  whatsappId    String
+  customMessage String?        @db.Text
+  status        CustomerStatus @default(ACTIVE)
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  whatsapp      WhatsAppInstance @relation(fields: [whatsappId], references: [id], onDelete: Restrict)
+  payments      Payment[]
+  messages      MessageHistory[]
+  billingLogs   BillingLog[]
+
+  @@index([phone])
+  @@index([dueDate])
+  @@index([status])
+  @@map("customers")
+}
+
+model Payment {
+  id               String   @id @default(uuid())
+  customerId       String
+  amount           Decimal  @db.Decimal(10, 2)
+  paidAt           DateTime @default(now())
+  dueDateReference DateTime
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+model BillingLog {
+  id               String       @id @default(uuid())
+  customerId       String
+  dueDateReference DateTime
+  stage            BillingStage
+  sentAt           DateTime     @default(now())
+
+  customer         Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, dueDateReference, stage])
+  @@index([customerId])
+  @@map("billing_logs")
+}
+
+model MessageHistory {
+  id            String         @id @default(uuid())
+  customerId    String?
+  whatsappId    String?
+  phone         String
+  message       String         @db.Text
+  stage         BillingStage   @default(MANUAL)
+  status        MessageStatus  @default(PENDING)
+  failureReason String?        @db.Text
+  sentAt        DateTime?
+  createdAt     DateTime       @default(now())
+
+  customer      Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  whatsapp      WhatsAppInstance? @relation(fields: [whatsappId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([whatsappId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("message_histories")
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
