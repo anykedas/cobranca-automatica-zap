@@ -467,6 +467,15 @@ export const WhatsAppNumbers: React.FC = () => {
 
                   {/* Ações da Instância */}
                   <div className="space-y-2 pt-4 mt-3 border-t border-slate-100">
+                    {/* Botão de Editar Nome / Dono com destaque */}
+                    <button
+                      onClick={() => handleOpenEdit(inst)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 hover:border-emerald-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Editar Nome / Dono deste WhatsApp</span>
+                    </button>
+
                     {/* Botão de Ativar para API */}
                     <div className="flex items-center justify-between gap-2">
                       {inst.isDefaultApi ? (
