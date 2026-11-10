@@ -1,18 +1,36 @@
 import React from 'react';
-import { Database, Download, Upload, Terminal, ShieldCheck, CheckCircle2, HardDrive, RefreshCw } from 'lucide-react';
+import { Database, Download, Upload, Terminal, Users } from 'lucide-react';
+import { ContactsBackupPanel } from '../components/ContactsBackupPanel.js';
 
 export const BackupPage: React.FC = () => {
   return (
-    <div className="space-y-6 max-w-5xl">
-      {/* Banner de Boas Práticas */}
-      <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-5 flex items-start gap-4">
-        <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0 mt-0.5">
-          <Database className="w-6 h-6" />
+    <div className="space-y-6 max-w-6xl">
+      {/* Seção Principal: Backup de Contatos (Exportar & Importar) */}
+      <div className="space-y-4">
+        <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-5 flex items-start gap-4">
+          <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0 mt-0.5">
+            <Users className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-emerald-950">Backup de Contatos (Exportar & Importar)</h3>
+            <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+              Faça o download completo dos seus clientes em <strong>JSON</strong> (cópia fiel para restauração no sistema) ou em planilha <strong>Excel (.CSV)</strong>, e importe novos contatos ou backups salvos com apenas alguns cliques.
+            </p>
+          </div>
+        </div>
+
+        <ContactsBackupPanel />
+      </div>
+
+      {/* Banner de Backup Completo de Infraestrutura */}
+      <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-5 flex items-start gap-4">
+        <div className="p-2.5 rounded-xl bg-white text-slate-700 shrink-0 mt-0.5 shadow-2xs">
+          <Database className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-emerald-950">Rotinas de Backup Automatizadas e Seguras</h3>
-          <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
-            Todos os dados de clientes, histórico de mensagens, pagamentos e as sessões de WhatsApp ficam salvos em volumes persistentes Docker (<code className="font-mono bg-emerald-100 px-1 py-0.5 rounded text-[11px]">pgdata</code> e <code className="font-mono bg-emerald-100 px-1 py-0.5 rounded text-[11px]">evolution_instances</code>). Utilize os scripts automáticos abaixo para realizar backups e restaurações completas na VPS Ubuntu.
+          <h3 className="text-sm font-bold text-slate-800">Backup Completo do Servidor (Banco + Sessões WhatsApp)</h3>
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+            Todos os dados de clientes, histórico de mensagens, pagamentos e as sessões de WhatsApp ficam salvos em volumes persistentes Docker (<code className="font-mono bg-white px-1 py-0.5 rounded text-[11px] border border-slate-200">pgdata</code> e <code className="font-mono bg-white px-1 py-0.5 rounded text-[11px] border border-slate-200">evolution_instances</code>). Utilize os comandos abaixo caso precise clonar ou restaurar a VPS inteira via terminal.
           </p>
         </div>
       </div>

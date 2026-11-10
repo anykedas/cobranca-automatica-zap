@@ -7,6 +7,8 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', (req, res, next) => customerController.list(req, res).catch(next));
+router.get('/export', (req, res, next) => customerController.exportBackup(req, res).catch(next));
+router.post('/import', (req, res, next) => customerController.importBackup(req, res).catch(next));
 router.post('/', (req, res, next) => customerController.create(req, res).catch(next));
 router.get('/:id', (req, res, next) => customerController.getById(req, res).catch(next));
 router.put('/:id', (req, res, next) => customerController.update(req, res).catch(next));

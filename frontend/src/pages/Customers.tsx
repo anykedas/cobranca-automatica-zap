@@ -18,9 +18,11 @@ import {
   Clock,
   CheckCircle2,
   FileText,
-  RotateCw
+  RotateCw,
+  Database
 } from 'lucide-react';
 import { Modal } from '../components/Modal.js';
+import { ContactsBackupPanel } from '../components/ContactsBackupPanel.js';
 import { Customer, WhatsAppInstance, RecurrenceType, CustomerStatus, Payment, MessageHistory } from '../types/index.js';
 import api from '../services/api.js';
 
@@ -48,6 +50,7 @@ export const Customers: React.FC<CustomersProps> = () => {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [sendMsgModalOpen, setSendMsgModalOpen] = useState(false);
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
 
   // Cliente selecionado para ação
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -378,10 +381,20 @@ export const Customers: React.FC<CustomersProps> = () => {
               })}
             </select>
 
+            {/* Botão Backup de Contatos */}
+            <button
+              onClick={() => setBackupModalOpen(true)}
+              title="Exportar ou Importar Contatos"
+              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Database className="w-4 h-4 text-emerald-600" />
+              <span>Backup / Importar</span>
+            </button>
+
             {/* Botão Novo Cliente */}
             <button
               onClick={handleOpenCreate}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Novo Cliente</span>
@@ -899,6 +912,20 @@ export const Customers: React.FC<CustomersProps> = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal: Backup de Contatos (Importar e Exportar) */}
+      <Modal
+        isOpen={backupModalOpen}
+        onClose={() => setBackupModalOpen(false)}
+        title="Backup de Contatos (Importar & Exportar)"
+        maxWidth="2xl"
+      >
+        <ContactsBackupPanel
+          whatsapps={whatsapps}
+          onImportSuccess={fetchCustomers}
+          compact
+        />
       </Modal>
     </div>
   );
